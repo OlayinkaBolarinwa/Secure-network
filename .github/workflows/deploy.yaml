@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Load local .env file if exists
+      # 2. Load local .env 
       - name: Load .env
         if: ${{ runner.os != 'Windows' }}
         run: |
@@ -49,15 +49,19 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # 7. Validate Terraform configuration
+      # 7. Import existing Resource Group 
+      - name: Terraform Import existing RG
+        run: |
+          terraform import azurerm_resource_group.rg_securenetwork /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network || true
+
+      # 8. Validate Terraform configuration
       - name: Terraform Validate
         run: terraform validate
 
-      # 8. Plan Terraform deployment
+      # 9. Plan Terraform deployment
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      # 9. Apply Terraform plan (working version)
+      # 10. Apply Terraform plan
       - name: Terraform Apply
-        run: |
-          terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan
