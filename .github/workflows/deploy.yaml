@@ -57,6 +57,7 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      # 9. Apply Terraform plan
+      # 9. Apply Terraform plan (working version)
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: |
+          terraform apply -auto-approve
