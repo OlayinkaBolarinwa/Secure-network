@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Load local .env
+      # 2. Load local .env file if exists
       - name: Load .env
         if: ${{ runner.os != 'Windows' }}
         run: |
@@ -49,28 +49,10 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # 7a. Import existing Resource Group
+      # 7. Import existing Resource Group 
       - name: Terraform Import existing RG
         run: |
           terraform import azurerm_resource_group.rg_securenetwork /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network || true
-
-      # 7b. Import existing Virtual Networks
-      - name: Terraform Import existing VNETs
-        run: |
-          terraform import azurerm_virtual_network.vnet1 /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Network/virtualNetworks/Peer1_vnet || true
-          terraform import azurerm_virtual_network.vnet2 /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Network/virtualNetworks/Peer2_vnet || true
-
-      # 7c. Import existing Public IPs
-      - name: Terraform Import existing Public IPs
-        run: |
-          terraform import azurerm_public_ip.peer1_pub /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Network/publicIPAddresses/peer1-public-ip || true
-          terraform import azurerm_public_ip.peer2_pub /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Network/publicIPAddresses/peer2-public-ip || true
-
-      # 7d. Import existing NSGs
-      - name: Terraform Import existing NSGs
-        run: |
-          terraform import azurerm_network_security_group.peer1_nsg /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Network/networkSecurityGroups/peer1-nsg || true
-          terraform import azurerm_network_security_group.peer2_nsg /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Network/networkSecurityGroups/peer2-nsg || true
 
       # 8. Validate Terraform configuration
       - name: Terraform Validate
