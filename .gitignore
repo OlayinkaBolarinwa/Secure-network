@@ -9,3 +9,4 @@ secure_network_key.pub
 
 *.log
 *.bak
+.env
