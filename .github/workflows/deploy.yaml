@@ -1,4 +1,4 @@
-name: Terraform Deploy
+name: Secure-network
 
 on:
   push:
@@ -8,26 +8,28 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout source code
+        uses: actions/checkout@v2
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.13.1
-
-      - name: Azure Login
+      - name: Log in to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Terraform Init
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Initialize Terraform
         run: terraform init
 
-      - name: Terraform Plan
+      - name: Validate Terraform
+        run: terraform validate
+
+      - name: Plan Terraform
         run: terraform plan
 
-      - name: Terraform Apply
+      - name: Apply Terraform
         run: terraform apply -auto-approve
