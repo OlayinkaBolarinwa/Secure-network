@@ -1,68 +1,33 @@
-name: Secure-network Deploy
+name: Terraform Deploy
 
 on:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      # Use local .env if exists
-      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
     steps:
-      # 1. Checkout repository
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Load local .env file if exists
-      - name: Load .env
-        if: ${{ runner.os != 'Windows' }}
-        run: |
-          if [ -f .env ]; then
-            echo "Loading .env variables..."
-            export $(grep -v '^#' .env | xargs)
-          fi
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13.1
 
-      # 3. Login to Azure
-      - name: Login to Azure
+      - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 4. Set Terraform Azure env
-      - name: Set Terraform Azure env
-        run: |
-          echo "ARM_SUBSCRIPTION_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_SECRET=${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
-          echo "ARM_TENANT_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
-
-      # 5. Setup Terraform
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      # 6. Initialize Terraform
       - name: Terraform Init
         run: terraform init
 
-      # 7. Validate Terraform configuration
-      - name: Terraform Validate
-        run: terraform validate
-
-      # 8. Import existing VMs to avoid disk conflicts
-      - name: Import Existing VMs
-        run: |
-          terraform import -input=false azurerm_virtual_machine.peer1_vm /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Compute/virtualMachines/peer1-vm || true
-          terraform import -input=false azurerm_virtual_machine.peer2_vm /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Compute/virtualMachines/peer2-vm || true
-
-      # 9. Plan Terraform deployment
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan
 
-      # 10. Apply Terraform plan
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve
