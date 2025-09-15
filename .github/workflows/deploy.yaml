@@ -1,4 +1,4 @@
-name: Secure-network Terraform
+name: Secure-network Deploy
 
 on:
   push:
@@ -9,40 +9,29 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
     steps:
-      # 1. Checkout repository
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Azure login
       - name: Login to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3. Set environment variables for Terraform Azure provider
-      - name: Set Terraform Azure environment variables
-        run: |
-          echo "ARM_SUBSCRIPTION_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_SECRET=${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
-          echo "ARM_TENANT_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
-
-      # 4. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.0
 
-      # 5. Initialize Terraform
       - name: Terraform Init
         run: terraform init
 
-      # 6. Validate Terraform configuration
       - name: Terraform Validate
         run: terraform validate
 
-      # 7. Plan Terraform deployment
       - name: Terraform Plan
         run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
