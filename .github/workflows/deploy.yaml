@@ -10,39 +10,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
+      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Setup Terraform
+      # Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.13.1
 
-      # Step 3: Azure Login
+      # Login to Azure using Service Principal
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Step 4: Terraform Init
+      # Initialize Terraform
       - name: Terraform Init
         run: terraform init
 
-      # Step 5: Import existing resource group (non-interactive)
-      - name: Terraform Import Resource Group
-        run: |
-          terraform import \
-            -input=false \
-            -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
-            azurerm_resource_group.rg_securenetwork \
-            /subscriptions/ec248675-1d06-41c0-a954-557ab9cf7127/resourceGroups/Secure-Network || true
-
-      # Step 6: Terraform Plan
+      # Terraform Plan with variables from secrets
       - name: Terraform Plan
-        run: terraform plan -input=false -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
+        run: |
+          terraform plan \
+            -var "subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -var "tenant_id=${{ secrets.AZURE_TENANT_ID }}" \
+            -var "client_id=${{ secrets.AZURE_CLIENT_ID }}" \
+            -var "client_secret=${{ secrets.AZURE_CLIENT_SECRET }}"
 
-      # Step 7: Terraform Apply
+      # Terraform Apply with variables from secrets
       - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
+        run: |
+          terraform apply -auto-approve \
+            -var "subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -var "tenant_id=${{ secrets.AZURE_TENANT_ID }}" \
+            -var "client_id=${{ secrets.AZURE_CLIENT_ID }}" \
+            -var "client_secret=${{ secrets.AZURE_CLIENT_SECRET }}"
