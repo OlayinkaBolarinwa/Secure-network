@@ -10,28 +10,53 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
+      # Use local .env if exists, otherwise fallback to GitHub Secrets
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
     steps:
+      # 1. Checkout repository
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Load local .env file if exists
+      - name: Load .env
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          if [ -f .env ]; then
+            echo "Loading .env variables..."
+            export $(grep -v '^#' .env | xargs)
+          fi
+
+      # 3. Login to Azure
       - name: Login to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # 4. Set Terraform Azure environment variables
+      - name: Set Terraform Azure env
+        run: |
+          echo "ARM_SUBSCRIPTION_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
+
+      # 5. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
+      # 6. Initialize Terraform
       - name: Terraform Init
         run: terraform init
 
+      # 7. Validate Terraform configuration
       - name: Terraform Validate
         run: terraform validate
 
+      # 8. Plan Terraform deployment
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
+      # 9. Apply Terraform plan
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
