@@ -10,7 +10,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      # Use local .env if exists, otherwise fallback to GitHub Secrets
+      # Use local .env if exists
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
     steps:
@@ -33,7 +33,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 4. Set Terraform Azure environment variables
+      # 4. Set Terraform Azure env
       - name: Set Terraform Azure env
         run: |
           echo "ARM_SUBSCRIPTION_ID=${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
@@ -49,14 +49,15 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # 7. Import existing Resource Group 
-      - name: Terraform Import existing RG
-        run: |
-          terraform import azurerm_resource_group.rg_securenetwork /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network || true
-
-      # 8. Validate Terraform configuration
+      # 7. Validate Terraform configuration
       - name: Terraform Validate
         run: terraform validate
+
+      # 8. Import existing VMs to avoid disk conflicts
+      - name: Import Existing VMs
+        run: |
+          terraform import -input=false azurerm_virtual_machine.peer1_vm /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Compute/virtualMachines/peer1-vm || true
+          terraform import -input=false azurerm_virtual_machine.peer2_vm /subscriptions/${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}/resourceGroups/Secure-Network/providers/Microsoft.Compute/virtualMachines/peer2-vm || true
 
       # 9. Plan Terraform deployment
       - name: Terraform Plan
