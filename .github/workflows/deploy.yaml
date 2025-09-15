@@ -26,8 +26,11 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Terraform Import Resource Group
+        run: terraform import azurerm_resource_group.rg_securenetwork /subscriptions/ec248675-1d06-41c0-a954-557ab9cf7127/resourceGroups/Secure-Network || true
+
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -input=false -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -input=false -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
