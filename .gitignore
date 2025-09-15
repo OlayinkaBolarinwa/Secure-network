@@ -1,0 +1,11 @@
+# Terraform files
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# SSH keys
+secure_network_key
+secure_network_key.pub
+
+*.log
+*.bak
