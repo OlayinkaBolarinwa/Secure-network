@@ -27,19 +27,8 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        run: |
-          terraform plan \
-            -var "subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
-            -var "tenant_id=${{ secrets.AZURE_TENANT_ID }}" \
-            -var "client_id=${{ secrets.AZURE_CLIENT_ID }}" \
-            -var "client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" \
-            -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
+        run: terraform plan -var "ssh_public_key=$(cat ~/.ssh/azure_key.pub)"
 
       - name: Terraform Apply
-        run: |
-          terraform apply -auto-approve \
-            -var "subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
-            -var "tenant_id=${{ secrets.AZURE_TENANT_ID }}" \
-            -var "client_id=${{ secrets.AZURE_CLIENT_ID }}" \
-            -var "client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" \
-            -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve -var "ssh_public_key=$(cat ~/.ssh/azure_key.pub)"
